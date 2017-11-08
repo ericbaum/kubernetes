@@ -4,6 +4,7 @@ metadata:
   labels:
     name: postgres
   name: postgres
+  namespace: dojot
 spec:
   ports:
   - port: 5432

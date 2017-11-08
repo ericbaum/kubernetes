@@ -44,5 +44,72 @@ subjects:
   namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: system:persistent-volume-binder
+  name: system:persistent-volume-provisioner
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: rbd-provisioner
+  namespace: dojot
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rbd-provisioner-role3
+subjects:
+- kind: ServiceAccount
+  name: rbd-provisioner
+  namespace: dojot
+roleRef:
+  kind: ClusterRole
+  name: system:controller:persistent-volume-binder
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rbd-provisioner-role4
+subjects:
+- kind: ServiceAccount
+  name: rbd-provisioner
+  namespace: dojot
+roleRef:
+  kind: ClusterRole
+  name: system:persistent-volume-provisioner
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: rbd-provisioner-event-role
+rules:
+- apiGroups: [""]
+  resources: ["events"]
+  verbs: ["get", "list", "watch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rbd-provisioner-role5
+subjects:
+- kind: ServiceAccount
+  name: rbd-provisioner
+  namespace: dojot
+roleRef:
+  kind: ClusterRole
+  name: rbd-provisioner-event-role
+  apiGroup: rbac.authorization.k8s.io
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: rbd-provisioner-role6
+subjects:
+- kind: ServiceAccount
+  name: rbd-provisioner
+  namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: rbd-provisioner-event-role
   apiGroup: rbac.authorization.k8s.io
