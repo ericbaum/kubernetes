@@ -45,6 +45,7 @@ if [ ${DEPLOY_TYPE} = "LOCAL" ]; then
     kubectl create -n dojot configmap iotagent-conf --from-file=iotagent/config.js
     kubectl create -n dojot configmap kong-route-config --from-file=config_scripts/kong.config.sh
     kubectl create -n dojot configmap create-admin-user --from-file=config_scripts/create-admin-user.sh
+    kubectl create -n dojot configmap postgres-init --from-file=config_scripts/postgres-init.sh
 
     # Deploy Dojot services
     kubectl create -n dojot -f manifests/LOCAL/ceph-secret-user.yaml

@@ -20,7 +20,8 @@ spec:
         - name: DB_USER
           value: postgres
         - name: DB_PWD
-          value: ""
+        # TODO: Set this as a secret
+          value: kong
         - name: KONG_URL
           value: http://kong:8001
       restartPolicy: Always

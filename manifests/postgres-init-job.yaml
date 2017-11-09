@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-init
+  namespace: dojot
+spec:
+  template:
+    metadata:
+      name: postgres-init
+    spec:
+      containers:
+      - name: postgres-init
+        image: postgres:9.6
+        env:
+        - name: PGHOST
+          value: postgres
+        - name: PGUSER
+          value: postgres
+        # TODO: Get password from a secret
+        - name: PGPASSWORD
+          value: kong
+        command: ['/bin/sh', '/init_script/postgres-init.sh']
+        volumeMounts:
+        - mountPath: /init_script
+          name: postgres-init
+      restartPolicy: OnFailure
+      volumes:
+      - name: postgres-init
+        configMap:
+          name: postgres-init
