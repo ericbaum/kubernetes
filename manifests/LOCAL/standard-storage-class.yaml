@@ -11,3 +11,5 @@ parameters:
   pool: kube
   userId: kube
   userSecretName: ceph-secret-user
+  imageFormat: "2"
+  imageFeatures: layering

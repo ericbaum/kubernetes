@@ -14,6 +14,11 @@ spec:
           value: postgres
         - name: KONG_PG_HOST
           value: postgres
+        - name: KONG_PG_USER
+          value: postgres
+        # TODO: Get this value from a secret
+        - name: KONG_PG_PASSWORD
+          value: kong
         image: kong:0.11
         args: ["kong",  "migrations", "up"]
       restartPolicy: OnFailure

@@ -77,7 +77,13 @@ SERVICES_LIST = [
     'perseo-fe-service.yaml',
     'postgres-service.yaml',
     'redis-sentinel-service.yaml',
-    'sth-service.yaml'
+    'sth-service.yaml',
+    'zookeeper-server-service.yaml',
+    'zookeeper-client-service.yaml'
+]
+
+STATEFUL_SETS = [
+    'zookeeper-cluster.yaml'
 ]
 
 JOBS_LIST = [
@@ -349,6 +355,16 @@ def cluster_creation(project_id):
                 api_instance.read_namespaced_replication_controller(name=object_name, namespace="dojot")
             except ApiException:
                 api_instance.create_namespaced_replication_controller(body=dep, namespace="dojot")
+
+    for statefulset in STATEFUL_SETS:
+        with open("manifests/" + statefulset) as f:
+            dep = yaml.load(f)
+
+            object_name = dep['metadata']['name']
+            try:
+                api_instance_apps.read_namespaced_stateful_set(name=object_name, namespace="dojot")
+            except ApiException:
+                api_instance_apps.create_namespaced_stateful_set(body=dep, namespace="dojot")
 
     for volume in VOLUMES_LIST:
         with open("manifests/" + volume) as f:
