@@ -4,7 +4,7 @@ metadata:
   name: dojot
 provisioner: ceph.com/rbd
 parameters:
-  monitors: [CEPH_MONITORS]
+  monitors: "CEPH_MONITOR1,CEPH_MONITOR2"
   adminId: admin
   adminSecretName: ceph-secret-admin
   adminSecretNamespace: kube-system

@@ -22,6 +22,5 @@ spec:
           value: "rs0"
         image: telefonicaiot/fiware-sth-comet
         name: sth
-        resources: {}
       restartPolicy: Always
 

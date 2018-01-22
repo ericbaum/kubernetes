@@ -1,0 +1,13 @@
+---
+version: latest
+namespace: dojot
+storage:
+  type: ceph
+  cephMonitors:
+  - '10.0.0.1:6789'
+  - '10.0.0.2:6789'
+  cephAdminId: admin
+  cephAdminKey: AQAwz9tZS90UGhAA88VpX9gA6MjOKmwwDqdgSA==
+  cephUserId: kube
+  cephUserKey: AQDzT+9Z+kaLDBAAvC2iPC9s0LdWUkggdjjffA==
+  cephPoolName: kube
