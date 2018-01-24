@@ -1,4 +1,4 @@
-#!python3
+#!/usr/bin/env python3
 
 import argparse
 import logging
@@ -16,8 +16,9 @@ def parse_arguments():
     logger.info("Parsing Input Arguments")
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-c", "--config", dest='config_file', action='store', default='config.yaml',
-                        help="Path to the configuration file for the deployment")
+    parser.add_argument("-c", "--config", dest='config_file',
+                        action='store', default='config.yaml',
+                        help="Path to the deployment configuration file")
 
     return parser.parse_args()
 

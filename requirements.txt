@@ -1,0 +1,4 @@
+# File containing requirements for running the deployer
+
+pyyaml
+kubernetes

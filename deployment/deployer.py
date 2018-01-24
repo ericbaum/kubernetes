@@ -15,7 +15,8 @@ class KubeDeployer:
 
     def deploy_rbd(self, namespace):
 
-        with open('manifests/STORAGE/CEPH/rbd-provisioner.yaml', 'r') as rbd_model:
+        with open('manifests/STORAGE/CEPH/rbd-provisioner.yaml',
+                  'r') as rbd_model:
 
             for rbd_data in yaml.load_all(rbd_model):
 
@@ -60,9 +61,11 @@ class KubeDeployer:
             user_pool = storage['cephPoolName']
 
             self.kube_client.create_secret('ceph-secret-admin', 'kubernetes.io/rbd',
-                                           'kube-system', {'key': base64.b64encode(admin_key.encode()).decode()})
+                                           'kube-system', {'key': base64.b64encode(
+                                               admin_key.encode()).decode()})
             self.kube_client.create_secret('ceph-secret-user', 'kubernetes.io/rbd',
-                                           namespace, {'key': base64.b64encode(user_key.encode()).decode()})
+                                           namespace, {'key': base64.b64encode(
+                                               user_key.encode()).decode()})
 
             with open('manifests/STORAGE/CEPH/dojot-storage-class.yaml', 'r') as st_class:
                 st_data = yaml.load(st_class)
@@ -71,7 +74,8 @@ class KubeDeployer:
                 provisioner = st_data['provisioner']
                 parameters = st_data['parameters']
 
-                parameters['monitors'] = str(ceph_monitors).strip("[]").replace("'", "").replace(" ", "")
+                parameters['monitors'] = \
+                    str(ceph_monitors).strip("[]").replace("'", "").replace(" ", "")
                 parameters['userId'] = user_id
                 parameters['adminId'] = admin_id
                 parameters['pool'] = user_pool
@@ -96,6 +100,55 @@ class KubeDeployer:
                 self.kube_client.create_storage_class(name, {'provisioner': provisioner,
                                                              'parameters': parameters})
 
+    def configure_external_access(self, namespace):
+        external = self.config.get_config_data('externalAccess')
+
+        external_ports = external['ports']
+
+        if external['type'] == 'publicIP':
+            ips_list = external['ips']
+
+            with open('manifests/EXTERNAL_ACCESS/public-ip.yaml', 'r') as external_file:
+                for service_doc in yaml.load_all(external_file):
+                    service_name = service_doc['metadata']['name']
+                    service_spec = service_doc['spec']
+
+                    service_spec['externalIPs'] = ips_list
+                    service_ports = service_spec['ports']
+
+                    for port in service_ports:
+                        if port['name'] == 'ext-http':
+                            port['port'] = external_ports['httpPort']
+                        elif port['name'] == 'ext-https':
+                            port['port'] = external_ports['httpsPort']
+                        elif port['name'] == 'ext-mqtt':
+                            port['port'] = external_ports['mqttPort']
+                        elif port['name'] == 'ext-coap':
+                            port['port'] = external_ports['coapPort']
+
+                    self.kube_client.create_service(service_name, namespace, service_spec)
+
+        elif external['type'] == 'loadBalancer':
+
+            with open('manifests/EXTERNAL_ACCESS/load-balancer.yaml', 'r') as external_file:
+                for service_doc in yaml.load_all(external_file):
+                    service_name = service_doc['metadata']['name']
+                    service_spec = service_doc['spec']
+
+                    service_ports = service_spec['ports']
+
+                    for port in service_ports:
+                        if port['name'] == 'ext-http':
+                            port['port'] = external_ports['httpPort']
+                        elif port['name'] == 'ext-https':
+                            port['port'] = external_ports['httpsPort']
+                        elif port['name'] == 'ext-mqtt':
+                            port['port'] = external_ports['mqttPort']
+                        elif port['name'] == 'ext-coap':
+                            port['port'] = external_ports['coapPort']
+
+                    self.kube_client.create_service(service_name, namespace, service_spec)
+
     def deploy(self):
         logger.info("Starting deployment")
 
@@ -104,5 +157,7 @@ class KubeDeployer:
         self.kube_client.create_namespace(namespace)
 
         self.configure_storage(namespace)
+
+        self.configure_external_access(namespace)
 
         logger.info("Dojot was successfully deployed!")

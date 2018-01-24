@@ -86,7 +86,8 @@ class KubeClient:
         try:
             res = self.extensionsV1Beta1.read_namespaced_deployment(name, namespace)
             if res.metadata.name == name:
-                logger.info("Updating existing deployment with name '%s' on namespace '%s'" % (name, namespace))
+                logger.info("Updating existing deployment with name '%s' on namespace '%s'" %
+                            (name, namespace))
                 self.extensionsV1Beta1.replace_namespaced_deployment(name, namespace, body)
         except ApiException as error:
             if error.status == 404:
@@ -107,10 +108,12 @@ class KubeClient:
         try:
             res = self.v1.read_namespaced_service_account(name, namespace)
             if res.metadata.name == name:
-                logger.info("Service Account '%s' already exists at namespace '%s', nothing done" % (name, namespace))
+                logger.info("Service Account '%s' already exists at namespace '%s', nothing done" %
+                            (name, namespace))
         except ApiException as error:
             if error.status == 404:
-                logger.info("Creating service account named '%s' at namespace '%s'" % (name, namespace))
+                logger.info("Creating service account named '%s' at namespace '%s'" %
+                            (name, namespace))
                 self.v1.create_namespaced_service_account(namespace, body)
             else:
                 logger.error(error)
@@ -161,6 +164,36 @@ class KubeClient:
             if error.status == 404:
                 logger.info("Creating cluster role binding '%s'" % name)
                 self.authorizationV1Beta1.create_cluster_role_binding(body)
+            else:
+                logger.error(error)
+                exit(1)
+
+    def create_service(self, name, namespace, spec):
+
+        body = {
+            'metadata': {
+                'name': name
+            },
+            'spec': spec
+        }
+
+        try:
+            res = self.v1.read_namespaced_service(name, namespace)
+
+            body['metadata']['resourceVersion'] = res.metadata.resource_version
+
+            cluster_ip = getattr(res.spec, 'cluster_ip', None)
+
+            if cluster_ip:
+                body['spec']['clusterIP'] = cluster_ip
+
+            if res.metadata.name == name:
+                logger.info("Updating existing service with name '%s'" % name)
+                self.v1.replace_namespaced_service(name, namespace, body)
+        except ApiException as error:
+            if error.status == 404:
+                logger.info("Creating service '%s' on namespace '%s'" % (name, namespace))
+                self.v1.create_namespaced_service(namespace, body)
             else:
                 logger.error(error)
                 exit(1)

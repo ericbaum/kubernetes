@@ -1,13 +1,24 @@
 ---
-version: latest
+version: 0.2.0-nightly20180306
 namespace: dojot
 storage:
   type: ceph
   cephMonitors:
   - '10.0.0.1:6789'
   - '10.0.0.2:6789'
+  - '10.0.0.3:6789'
   cephAdminId: admin
-  cephAdminKey: AQAwz9tZS90UGhAA88VpX9gA6MjOKmwwDqdgSA==
-  cephUserId: kube
-  cephUserKey: AQDzT+9Z+kaLDBAAvC2iPC9s0LdWUkggdjjffA==
+  cephAdminKey: AQD85Z5a/wnlJBAARNISUDpC6RHc8g/UkUcDLA==
+  cephUserId: admin
+  cephUserKey: AQD85Z5a/wnlJBAARNISUDpC6RHc8g/UkUcDLA==
   cephPoolName: kube
+externalAccess:
+  type: publicIP
+  ips:
+  - '10.0.0.1'
+  - '10.0.0.2'
+  - '10.0.0.3'
+  ports:
+    httpPort: 80
+    httpsPort: 443
+    mqttPort: 1883

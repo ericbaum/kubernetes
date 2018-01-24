@@ -8,10 +8,10 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
-  - name: "ext-8000"
+  - name: "ext-http"
     port: 80
     targetPort: 8000
-  - name: "ext-8443"
+  - name: "ext-https"
     port: 443
     targetPort: 8443
   selector:
