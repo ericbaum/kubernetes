@@ -13,16 +13,11 @@ spec:
         name: auth
     spec:
       containers:
-      - image: dojot/auth:latest
+      - image: agrotracking/auth:latest
         name: auth
         env:
-        - name: DB_HOST
-          value: postgres
-        - name: DB_USER
-          value: postgres
-        - name: DB_PWD
-        # TODO: Set this as a secret
-          value: kong
         - name: KONG_URL
           value: http://kong:8001
+        - name: MONGO_REPLICA_SET
+          value: 'rs0'
       restartPolicy: Always

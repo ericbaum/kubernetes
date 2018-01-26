@@ -1,46 +1,141 @@
-apiVersion: apps/v1beta1
-kind: StatefulSet
+apiVersion: v1
+kind: Pod
 metadata:
-  name: mongodb
+  name: mongodb-1
+  namespace: dojot
+  labels:
+    name: mongodb
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - agro-mongo-1
+  containers:
+  - name: mongodb
+    image: mongo:3.2
+    command:
+      - mongod
+      - "--replSet"
+      - rs0
+      - "--smallfiles"
+      - "--noprealloc"
+    ports:
+      - containerPort: 27017
+    volumeMounts:
+      - name: mongo-volume-1
+        mountPath: /data/db
+  - name: mongo-sidecar
+    image: agrotracking/mongo-k8s-sidecar
+    env:
+      - name: MONGO_SIDECAR_POD_LABELS
+        value: "name=mongodb"
+      - name: MONGO_SIDECAR_POD_LABELS_ARBITER
+        value: "type=arbiter"
+      - name: KUBE_NAMESPACE
+        value: dojot
+  serviceAccountName: mongodb
+  volumes:
+  - name: mongo-volume-1
+    hostPath:
+      path: /mongo
+      type: Directory
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongodb-2
+  namespace: dojot
+  labels:
+    name: mongodb
+spec:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: kubernetes.io/hostname
+            operator: In
+            values:
+            - agro-mongo-2
+  containers:
+  - name: mongodb
+    image: mongo:3.2
+    command:
+      - mongod
+      - "--replSet"
+      - rs0
+      - "--smallfiles"
+      - "--noprealloc"
+    ports:
+      - containerPort: 27017
+    volumeMounts:
+      - name: mongo-volume-2
+        mountPath: /data/db
+  - name: mongo-sidecar
+    image: agrotracking/mongo-k8s-sidecar
+    env:
+      - name: MONGO_SIDECAR_POD_LABELS
+        value: "name=mongodb"
+      - name: MONGO_SIDECAR_POD_LABELS_ARBITER
+        value: "type=arbiter"
+      - name: KUBE_NAMESPACE
+        value: dojot
+  serviceAccountName: mongodb
+  volumes:
+  - name: mongo-volume-2
+    hostPath:
+      path: /mongo
+      type: Directory
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    name: mongodb
+    type: arbiter
+  name: mongodb-arbiter
   namespace: dojot
 spec:
-  serviceName: mongodb
   replicas: 3
   template:
     metadata:
       labels:
         name: mongodb
+        type: arbiter
     spec:
-      terminationGracePeriodSeconds: 15
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - agro-mongo-1
+                - agro-mongo-2
       containers:
-        - name: mongodb
-          image: mongo:3.2
-          command:
-            - mongod
-            - "--replSet"
-            - rs0
-            - "--smallfiles"
-            - "--noprealloc"
-          ports:
-            - containerPort: 27017
-          volumeMounts:
-            - name: mongo-volume
-              mountPath: /data/db
-        - name: mongo-sidecar
-          image: cvallance/mongo-k8s-sidecar
-          env:
-            - name: MONGO_SIDECAR_POD_LABELS
-              value: "name=mongodb"
-            - name: KUBE_NAMESPACE
-              value: dojot
+      - name: mongodb
+        image: mongo:3.2
+        command:
+          - mongod
+          - "--replSet"
+          - rs0
+          - "--smallfiles"
+          - "--noprealloc"
+        ports:
+          - containerPort: 27017
+      - name: mongo-sidecar
+        image: agrotracking/mongo-k8s-sidecar
+        env:
+          - name: MONGO_SIDECAR_POD_LABELS
+            value: "name=mongodb"
+          - name: MONGO_SIDECAR_POD_LABELS_ARBITER
+            value: "type=arbiter"
+          - name: KUBE_NAMESPACE
+            value: dojot
       serviceAccountName: mongodb
-  volumeClaimTemplates:
-  - metadata:
-      name: mongo-volume
-      namespace: dojot
-    spec:
-      accessModes: [ "ReadWriteOnce" ]
-      storageClassName: dojot
-      resources:
-        requests:
-          storage: 1Gi

@@ -2,8 +2,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    name: external
-  name: external
+    name: external-gui
+  name: external-gui
   namespace: dojot
 spec:
   ports:
@@ -13,10 +13,28 @@ spec:
   - name: "ext-8443"
     port: 443
     targetPort: 8443
+  externalIPs:
+  - 10.50.11.93
+  - 10.50.11.94
+  - 10.50.11.95
+  selector:
+    app: external-gui
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: external-mqtt
+  name: external-mqtt
+  namespace: dojot
+spec:
+  ports:
   - name: "ext-mqtt"
     port: 1883
     targetPort: 1883
   externalIPs:
-  - [EXTERNAL_IP]
+  - 10.50.11.93
+  - 10.50.11.94
+  - 10.50.11.95
   selector:
-    app: external
+    app: external-mqtt

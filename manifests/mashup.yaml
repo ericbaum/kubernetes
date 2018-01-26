@@ -13,6 +13,9 @@ spec:
         name: mashup
     spec:
       containers:
-      - image: dojot/mashup:latest
+      - image: agrotracking/mashup:latest
         name: mashup
+        env:
+        - name: MONGO_REPLICA_SET
+          value: rs0
       restartPolicy: Always

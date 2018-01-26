@@ -17,7 +17,7 @@ spec:
         - name: PERSEO_CORE_URL
           value: http://perseo-core:8080
         - name: PERSEO_MONGO_HOST
-          value: mongodb-0.mongodb,mongodb-1.mongodb,mongodb-2.mongodb
+          value: mongodb
         - name: PERSEO_MONGO_REPLICA_SET
           value: rs0
         - name: PERSEO_ORION_URL

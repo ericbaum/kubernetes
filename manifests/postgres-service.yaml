@@ -11,4 +11,3 @@ spec:
     targetPort: 5432
   selector:
     name: postgres
-    spilo-role: master

@@ -13,12 +13,11 @@ spec:
     metadata:
       labels:
         name: mqtt
-        app: external
+        app: external-mqtt
     spec:
       containers:
       - image: ansi/mosquitto
         name: mqtt
         ports:
         - containerPort: 1883
-        - containerPort: 8883
       restartPolicy: Always

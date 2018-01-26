@@ -13,6 +13,9 @@ spec:
         name: device-manager
     spec:
       containers:
-      - image: dojot/device-manager:latest
+      - image: agrotracking/device-manager:latest
         name: device-manager
+        env:
+        - name: MONGO_REPLICA_SET
+          value: "rs0"
       restartPolicy: Always

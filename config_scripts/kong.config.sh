@@ -32,7 +32,7 @@ done
     "name": "gui",
     "uris": "/",
     "strip_uri": false,
-    "upstream_url": "http://gui:80"
+    "upstream_url": "http://gui.dojot.svc.cluster.local:80"
 }
 PAYLOAD
 # no auth: serves only static front-end content
@@ -44,7 +44,7 @@ PAYLOAD
     "name": "metric",
     "uris": "/metric",
     "strip_uri": true,
-    "upstream_url": "http://orion:1026"
+    "upstream_url": "http://orion.dojot.svc.cluster.local:1026"
 }
 PAYLOAD
 authConfig "metric"
@@ -57,7 +57,7 @@ authConfig "metric"
     "name": "template",
     "uris": "/template",
     "strip_uri": false,
-    "upstream_url": "http://devm:5000"
+    "upstream_url": "http://devm.dojot.svc.cluster.local:5000"
 }
 PAYLOAD
 authConfig "template"
@@ -70,7 +70,7 @@ authConfig "template"
     "name": "device",
     "uris": "/device",
     "strip_uri": false,
-    "upstream_url": "http://devm:5000"
+    "upstream_url": "http://devm.dojot.svc.cluster.local:5000"
 }
 PAYLOAD
 authConfig "device"
@@ -82,7 +82,7 @@ authConfig "device"
     "name": "auth-service",
     "uris": "/auth",
     "strip_uri": true,
-    "upstream_url": "http://auth:5000"
+    "upstream_url": "http://auth.dojot.svc.cluster.local:5000"
 }
 PAYLOAD
 # no auth: this is actually the endpoint used to get a token
@@ -102,7 +102,7 @@ curl -o /dev/null -sS -X POST ${kong}/apis/auth-service/plugins \
     "name": "auth-revoke",
     "uris": "/auth/revoke",
     "strip_uri": true,
-    "upstream_url": "http://auth:5000/auth/revoke"
+    "upstream_url": "http://auth.dojot.svc.cluster.local:5000/auth/revoke"
 }
 PAYLOAD
 curl -o /dev/null -sS -X POST  $kong/apis/auth-revoke/plugins \
@@ -118,7 +118,7 @@ curl -o /dev/null -sS -X POST  $kong/apis/auth-revoke/plugins \
     "name": "user-service",
     "uris": "/auth/user",
     "strip_uri": true,
-    "upstream_url": "http://auth:5000/user"
+    "upstream_url": "http://auth.dojot.svc.cluster.local:5000/user"
 }
 PAYLOAD
 authConfig "user-service"
@@ -130,7 +130,7 @@ authConfig "user-service"
     "name": "flows",
     "uris": "/flows",
     "strip_uri": true,
-    "upstream_url": "http://mashup:3000"
+    "upstream_url": "http://mashup.dojot.svc.cluster.local:3000"
 }
 PAYLOAD
 authConfig "flows"
@@ -142,7 +142,7 @@ authConfig "flows"
     "name": "history",
     "uris": "/history",
     "strip_uri": true,
-    "upstream_url": "http://sth:8666"
+    "upstream_url": "http://sth.dojot.svc.cluster.local:8666"
 }
 PAYLOAD
 authConfig "history"
@@ -155,7 +155,7 @@ authConfig "history"
     "name": "mashup",
     "uris": "/mashup",
     "strip_uri": true,
-    "upstream_url": "http://mashup:1880"
+    "upstream_url": "http://mashup.dojot.svc.cluster.local:1880"
 }
 PAYLOAD
 # no auth: serves only available types
@@ -167,7 +167,7 @@ PAYLOAD
     "name": "httpDevices",
     "uris": "/iot",
     "strip_uri": false,
-    "upstream_url": "http://iotagent:8080"
+    "upstream_url": "http://iotagent.dojot.svc.cluster.local:8080"
 }
 PAYLOAD
 # no auth: used for middleware <-> device communication via HTTP(s)

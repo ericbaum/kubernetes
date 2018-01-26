@@ -13,14 +13,17 @@ spec:
     metadata:
       labels:
         name: iotagent
+        app: external-mqtt
     spec:
       containers:
-      - image: dojot/iotagent-json:latest
+      - image: dojot/iotagent-json:0.1.0-dojot-RC2
         command:
         - bin/iotagent-json
         - config/config.js
         name: iotagent
-        resources: {}
+        env:
+        - name: IOTA_MONGO_REPLICA_SET
+          value: 'rs0'
         volumeMounts:
         - mountPath: /opt/iotajson/config
           name: iotagent-conf

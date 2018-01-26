@@ -11,24 +11,23 @@ spec:
     metadata:
       labels:
         name: kong
-        app: external
+        app: external-gui
     spec:
       containers:
       - env:
         - name: KONG_DATABASE
           value: postgres
         - name: KONG_PG_HOST
-          value: postgres
+          value: postgres.dojot.svc.cluster.local
         - name: KONG_PG_USER
           value: postgres
-        # TODO: Get this from a secret
         - name: KONG_PG_PASSWORD
           value: kong
-        image: kong:0.11
+        image: kong:0.10
         name: kong
         ports:
         - containerPort: 8000
         - containerPort: 8443
         - containerPort: 8001
       restartPolicy: Always
-status: {}
+
