@@ -1,0 +1,28 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    name: persister
+  name: persister
+  namespace: dojot
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: persister
+    spec:
+      restartPolicy: Always
+      containers:
+      - image: dojot/persister
+        name: persister
+        env:
+        - name: PIPELINE_WORKERS
+          value: '16'
+        volumeMounts:
+        - mountPath: /usr/share/logstash/pipeline/
+          name: persister-conf
+      volumes:
+      - name: persister-conf
+        configMap:
+          name: persister-conf
