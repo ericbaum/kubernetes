@@ -142,7 +142,7 @@ authConfig "flows"
     "name": "history",
     "uris": "/history",
     "strip_uri": true,
-    "upstream_url": "http://sth.dojot.svc.cluster.local:8666"
+    "upstream_url": "http://history.dojot.svc.cluster.local:8000"
 }
 PAYLOAD
 authConfig "history"
