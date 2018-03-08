@@ -1,0 +1,143 @@
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: postgres
+  namespace: dojot
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: postgres-role
+  namespace: dojot
+rules:
+- apiGroups: [""]
+  resources: ["pods", "endpoints"]
+  verbs: ["get", "list", "patch"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: postgres-role-1
+  namespace: dojot
+subjects:
+- kind: ServiceAccount
+  name: postgres
+  namespace: dojot
+roleRef:
+  kind: Role
+  name: postgres-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: postgres-cluster
+  name: postgres-cluster
+  namespace: dojot
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    name: postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: postgres
+  name: postgres
+  namespace: dojot
+spec:
+  ports:
+  - port: 5432
+    targetPort: 5432
+  selector:
+    name: postgres
+    spilo-role: master
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: dojot
+  labels:
+    names: postgres
+spec:
+  serviceName: postgres-cluster
+  replicas: 3
+  template:
+    metadata:
+      name: postgres
+      labels:
+        name: postgres
+    spec:
+      serviceAccountName: postgres
+      containers:
+      - name: spilo
+        image: registry.opensource.zalan.do/acid/spilo-9.6:1.2-p17
+        env:
+        # TODO: Set all this passwords as secrets
+        - name: PGPASSWORD_SUPERUSER
+          value: kong
+        - name: PGPASSWORD_ADMIN
+          value: kong
+        - name: PGPASSWORD_STANDBY
+          value: kong
+        - name: ZOOKEEPER_HOSTS
+          value: zk-client
+        - name: SCOPE
+          value: postgres
+        - name: USE_WALE
+          value: ""
+        - name: POD_NAMESPACE
+          value: dojot
+        ports:
+        - containerPort: 8008
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-volume
+          mountPath: "/home/postgres/pgdata/pgroot"
+          subPath: ""
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-volume
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: dojot
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgres-init
+  namespace: dojot
+spec:
+  template:
+    metadata:
+      name: postgres-init
+    spec:
+      containers:
+      - name: postgres-init
+        image: postgres:9.6
+        env:
+        - name: PGHOST
+          value: postgres
+        - name: PGUSER
+          value: postgres
+        # TODO: Get password from a secret
+        - name: PGPASSWORD
+          value: kong
+        command: ['/bin/sh', '/init_script/postgres-init.sh']
+        volumeMounts:
+        - mountPath: /init_script
+          name: postgres-init
+      restartPolicy: OnFailure
+      volumes:
+      - name: postgres-init
+        configMap:
+          name: postgres-init
+

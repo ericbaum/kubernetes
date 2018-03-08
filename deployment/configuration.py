@@ -113,6 +113,42 @@ class ConfigData:
                                 (port[1], port[0]))
                     ports.update([port])
 
+        if 'services' not in self.config_data:
+            logger.error("services configuration not found")
+            exit(1)
+        else:
+            services_data = self.config_data['services']
+
+            if not services_data:
+                services_data = {}
+                self.config_data['services'] = services_data
+
+            self._check_services_configuration(services_data)
+
+    def _check_services_configuration(self, services_data):
+
+        zk_data = services_data.get('zookeeper', {})
+
+        zk_size = zk_data.get('clusterSize', 1)
+
+        if zk_size == 1:
+            logger.warning("Zookeeper cluster size is set to 1, running in standalone mode")
+        elif zk_size < 1:
+            logger.error("Invalid ZK cluster size %d" % zk_size)
+            exit(1)
+
+        services_data['zookeeper'] = {'clusterSize': zk_size}
+
+        pg_data = services_data.get('postgres', {})
+
+        pg_size = pg_data.get('clusterSize', 1)
+
+        if pg_size < 1:
+            logger.error("Invalid Postgres cluster size %d" % pg_size)
+            exit(1)
+
+        services_data['postgres'] = {'clusterSize': pg_size}
+
     def get_config_data(self, param=None):
 
         if param:

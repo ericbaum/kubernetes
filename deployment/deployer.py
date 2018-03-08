@@ -149,6 +149,90 @@ class KubeDeployer:
 
                     self.kube_client.create_service(service_name, namespace, service_spec)
 
+    def deploy_zookeeper(self, namespace, config):
+
+        zk_size = config['clusterSize']
+
+        with open('manifests/zookeeper.yaml', 'r') as zk_docs:
+
+            for zk_doc in yaml.load_all(zk_docs):
+
+                if zk_doc['kind'] == 'Service':
+                    self.kube_client.create_service(zk_doc['metadata']['name'],
+                                                    namespace, zk_doc['spec'])
+
+                elif zk_doc['kind'] == 'StatefulSet':
+
+                    zk_spec = zk_doc['spec']
+
+                    zk_spec['replicas'] = zk_size
+                    zk_spec['template']['spec']['containers'][0]['command'][-1] = \
+                        "--servers=%d" % zk_size
+
+                    self.kube_client.create_stateful_set(zk_doc['metadata']['name'],
+                                                         namespace, zk_spec)
+                else:
+                    logger.error("Invalid document on Zookeeper manifest: %s" % zk_doc['kind'])
+
+    def deploy_postgres(self, namespace, config):
+
+        pg_size = config['clusterSize']
+
+        with open('config_scripts/postgres-init.sh', 'r') as config_file:
+
+            config_data = {
+                "postgres-init.sh": config_file.read()
+            }
+
+            self.kube_client.create_config_map('postgres-init', namespace, config_data)
+
+        with open('manifests/postgres.yaml', 'r') as pg_docs:
+
+            for pg_doc in yaml.load_all(pg_docs):
+
+                if pg_doc['kind'] == 'ServiceAccount':
+                    self.kube_client.create_service_account(pg_doc['metadata']['name'], namespace)
+                elif pg_doc['kind'] == 'Role':
+                    self.kube_client.create_role(pg_doc['metadata']['name'], namespace,
+                                                 pg_doc['rules'])
+                elif pg_doc['kind'] == 'RoleBinding':
+                    self.kube_client.create_role_binding(pg_doc['metadata']['name'],
+                                                         namespace,
+                                                         pg_doc['subjects'],
+                                                         pg_doc['roleRef']['name'])
+                elif pg_doc['kind'] == 'Service':
+                    self.kube_client.create_service(pg_doc['metadata']['name'], namespace,
+                                                    pg_doc['spec'])
+                elif pg_doc['kind'] == 'StatefulSet':
+
+                    pg_spec = pg_doc['spec']
+
+                    pg_spec['replicas'] = pg_size
+
+                    for env_var in pg_spec['template']['spec']['containers'][0]['env']:
+                        if env_var['name'] == 'POD_NAMESPACE':
+                            env_var['value'] = namespace
+
+                    # TODO: Get passwoords as secrets
+
+                    self.kube_client.create_stateful_set(pg_doc['metadata']['name'],
+                                                         namespace, pg_spec)
+                elif pg_doc['kind'] == 'Job':
+
+                    # TODO: Passwords as secrets
+                    pass
+                    self.kube_client.start_job(pg_doc['metadata']['name'], namespace,
+                                               pg_doc['spec'])
+                else:
+                    logger.error("Invalid document on Postgres manifest: %s" % pg_doc['kind'])
+
+    def deploy_services(self, namespace):
+
+        services_config = self.config.get_config_data('services')
+        # This class instantiate the multiple dojot services
+        self.deploy_zookeeper(namespace, services_config['zookeeper'])
+        self.deploy_postgres(namespace, services_config['postgres'])
+
     def deploy(self):
         logger.info("Starting deployment")
 
@@ -159,5 +243,7 @@ class KubeDeployer:
         self.configure_storage(namespace)
 
         self.configure_external_access(namespace)
+
+        self.deploy_services(namespace)
 
         logger.info("Dojot was successfully deployed!")

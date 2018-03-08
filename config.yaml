@@ -22,3 +22,8 @@ externalAccess:
     httpPort: 80
     httpsPort: 443
     mqttPort: 1883
+services:
+  zookeeper:
+    clusterSize: 3
+  postgres:
+    clusterSize: 3

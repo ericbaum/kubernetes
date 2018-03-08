@@ -17,6 +17,8 @@ class KubeClient:
         self.storageV1Beta1 = kubernetes.client.StorageV1beta1Api()
         self.extensionsV1Beta1 = kubernetes.client.ExtensionsV1beta1Api()
         self.authorizationV1Beta1 = kubernetes.client.RbacAuthorizationV1beta1Api()
+        self.appsV1Beta1 = kubernetes.client.AppsV1beta1Api()
+        self.batchV1 = kubernetes.client.BatchV1Api()
 
     def create_namespace(self, namespace):
         try:
@@ -194,6 +196,131 @@ class KubeClient:
             if error.status == 404:
                 logger.info("Creating service '%s' on namespace '%s'" % (name, namespace))
                 self.v1.create_namespaced_service(namespace, body)
+            else:
+                logger.error(error)
+                exit(1)
+
+    def create_stateful_set(self, name, namespace, spec):
+
+        body = {
+            'metadata': {
+                'name': name
+            },
+            'spec': spec
+        }
+
+        try:
+            self.appsV1Beta1.read_namespaced_stateful_set(name, namespace)
+
+            # TODO: Check the correct way of scaling updating a statefulSet deployment
+
+            logger.warn("It is not possible to update or scale the stateful"
+                        " set %s via this script at the moment" % name)
+
+        except ApiException as error:
+            if error.status == 404:
+                logger.info("Creating stateful set '%s' on namespace '%s'" % (name, namespace))
+                self.appsV1Beta1.create_namespaced_stateful_set(namespace, body)
+            else:
+                logger.error(error)
+                exit(1)
+
+    def create_role(self, name, namespace, rules):
+
+        body = {
+            'metadata': {
+                'name': name
+            },
+            'rules': rules
+        }
+
+        try:
+            res = self.authorizationV1Beta1.read_namespaced_role(name, namespace)
+            if res.metadata.name == name:
+                logger.info("Updating existing role with "
+                            "name '%s' on namespace '%s'" % (name, namespace))
+                self.authorizationV1Beta1.replace_namespaced_role(name, namespace, body)
+        except ApiException as error:
+            if error.status == 404:
+                logger.info("Creating role '%s' on namespace '%s'" % (name, namespace))
+                self.authorizationV1Beta1.create_namespaced_role(namespace, body)
+            else:
+                logger.error(error)
+                exit(1)
+
+    def create_role_binding(self, name, namespace, subjects, role):
+
+        for subject in subjects:
+            subject['namespace'] = namespace
+
+        body = {
+            'metadata': {
+                'name': name
+            },
+            'subjects': subjects,
+            'roleRef': {
+                "kind": "Role",
+                "name": role,
+                "apiGroup": "rbac.authorization.k8s.io"
+            }
+        }
+
+        try:
+            res = self.authorizationV1Beta1.read_namespaced_role_binding(name, namespace)
+            if res.metadata.name == name:
+                logger.info("Updating existing role binding with "
+                            "name '%s' on namespace '%s'" % (name, namespace))
+                self.authorizationV1Beta1.replace_namespaced_role_binding(name, namespace, body)
+        except ApiException as error:
+            if error.status == 404:
+                logger.info("Creating role binding '%s' on namespace '%s'" % (name, namespace))
+                self.authorizationV1Beta1.create_namespaced_role_binding(namespace, body)
+            else:
+                logger.error(error)
+                exit(1)
+
+    def start_job(self, name, namespace, spec):
+
+        body = {
+            'metadata': {
+                'name': name
+            },
+            'spec': spec
+        }
+
+        try:
+            res = self.batchV1.read_namespaced_job(name, namespace)
+            if res.metadata.name == name:
+                logger.info("Updating existing job with "
+                            "name '%s' on namespace '%s'" % (name, namespace))
+                self.batchV1.patch_namespaced_job(name, namespace, body)
+        except ApiException as error:
+            if error.status == 404:
+                logger.info("Creating job '%s' on namespace '%s'" % (name, namespace))
+                self.batchV1.create_namespaced_job(namespace, body)
+            else:
+                logger.error(error)
+                exit(1)
+
+    def create_config_map(self, name, namespace, data):
+
+        body = {
+            'metadata': {
+                'name': name
+            },
+            'data': data
+        }
+
+        try:
+            res = self.v1.read_namespaced_config_map(name, namespace)
+            if res.metadata.name == name:
+                logger.info("Updating existing configmap with "
+                            "name '%s' on namespace '%s'" % (name, namespace))
+                self.v1.replace_namespaced_config_map(name, namespace, body)
+        except ApiException as error:
+            if error.status == 404:
+                logger.info("Creating configmap '%s' on namespace '%s'" % (name, namespace))
+                self.v1.create_namespaced_config_map(namespace, body)
             else:
                 logger.error(error)
                 exit(1)
