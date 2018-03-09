@@ -149,6 +149,16 @@ class ConfigData:
 
         services_data['postgres'] = {'clusterSize': pg_size}
 
+        mongodb_data = services_data.get('mongodb', {})
+
+        mongodb_replicas = mongodb_data.get('replicas', 0)
+
+        if mongodb_replicas < 0:
+            logger.error("Invalid MongoDB number of replicas %d" % mongodb_replicas)
+            exit(1)
+
+        services_data['mongodb'] = {'replicas': mongodb_replicas}
+
     def get_config_data(self, param=None):
 
         if param:

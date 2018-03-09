@@ -220,11 +220,47 @@ class KubeDeployer:
                 elif pg_doc['kind'] == 'Job':
 
                     # TODO: Passwords as secrets
-                    pass
                     self.kube_client.start_job(pg_doc['metadata']['name'], namespace,
                                                pg_doc['spec'])
                 else:
                     logger.error("Invalid document on Postgres manifest: %s" % pg_doc['kind'])
+
+    def deploy_mongodb(self, namespace, config):
+
+        mongodb_replicas = config['replicas']
+
+        with open('manifests/mongodb.yaml', 'r') as mongodb_docs:
+
+            for mongodb_doc in yaml.load_all(mongodb_docs):
+
+                if mongodb_doc['kind'] == 'ServiceAccount':
+                    self.kube_client.create_service_account(
+                        mongodb_doc['metadata']['name'], namespace)
+                elif mongodb_doc['kind'] == 'Role':
+                    self.kube_client.create_role(mongodb_doc['metadata']['name'], namespace,
+                                                 mongodb_doc['rules'])
+                elif mongodb_doc['kind'] == 'RoleBinding':
+                    self.kube_client.create_role_binding(mongodb_doc['metadata']['name'],
+                                                         namespace,
+                                                         mongodb_doc['subjects'],
+                                                         mongodb_doc['roleRef']['name'])
+                elif mongodb_doc['kind'] == 'Service':
+                    self.kube_client.create_service(mongodb_doc['metadata']['name'], namespace,
+                                                    mongodb_doc['spec'])
+                elif mongodb_doc['kind'] == 'StatefulSet':
+
+                    mongodb_spec = mongodb_doc['spec']
+
+                    mongodb_spec['replicas'] = 1 + mongodb_replicas
+
+                    for env_var in mongodb_spec['template']['spec']['containers'][1]['env']:
+                        if env_var['name'] == 'KUBE_NAMESPACE':
+                            env_var['value'] = namespace
+
+                    self.kube_client.create_stateful_set(mongodb_doc['metadata']['name'],
+                                                         namespace, mongodb_spec)
+                else:
+                    logger.error("Invalid document on MongoDB manifest: %s" % mongodb_doc['kind'])
 
     def deploy_services(self, namespace):
 
@@ -232,6 +268,7 @@ class KubeDeployer:
         # This class instantiate the multiple dojot services
         self.deploy_zookeeper(namespace, services_config['zookeeper'])
         self.deploy_postgres(namespace, services_config['postgres'])
+        self.deploy_mongodb(namespace, services_config['mongodb'])
 
     def deploy(self):
         logger.info("Starting deployment")

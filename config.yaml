@@ -27,3 +27,5 @@ services:
     clusterSize: 3
   postgres:
     clusterSize: 3
+  mongodb:
+    replicas: 2
