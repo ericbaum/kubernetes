@@ -1,0 +1,118 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-migrate
+  namespace: dojot
+spec:
+  template:
+    metadata:
+      name: kong-migrate
+    spec:
+      containers:
+      - name: kong-migrate
+        env:
+        # TODO: Set this values as secrets
+        - name: KONG_DATABASE
+          value: postgres
+        - name: KONG_PG_HOST
+          value: postgres
+        - name: KONG_PG_USER
+          value: postgres
+        # TODO: Get this value from a secret
+        - name: KONG_PG_PASSWORD
+          value: kong
+        image: dojot/kong:latest
+        args: ["kong",  "migrations", "up"]
+      restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: kong
+  name: kong
+  namespace: dojot
+spec:
+  ports:
+  - name: "apigw-http"
+    port: 8000
+    targetPort: 8000
+  - name: "apigw-https"
+    port: 8443
+    targetPort: 8443
+  - name: "apigw-config"
+    port: 8001
+    targetPort: 8001
+  selector:
+    name: kong
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    name: kong
+  name: kong
+  namespace: dojot
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: kong
+        app: external-kong
+    spec:
+      containers:
+      - name: kong
+        image: dojot/kong:latest
+        env:
+        - name: KONG_DATABASE
+          value: "postgres"
+        - name: KONG_PG_HOST
+          value: "postgres"
+        - name: KONG_PG_USER
+          value: "postgres"
+        # TODO: Get this from a secret
+        - name: KONG_PG_PASSWORD
+          value: "kong"
+        ports:
+        - containerPort: 8000
+        - containerPort: 8443
+        - containerPort: 8001
+        volumeMounts:
+        - mountPath: /plugins/pep-kong
+          name: pep-kong-plugin
+        - mountPath: /plugins/ma-plugin
+          name: ma-plugin
+      restartPolicy: Always
+      volumes:
+      - name: pep-kong-plugin
+        gitRepo:
+          repository: "https://github.com/dojot/pep-kong.git"
+          revision: "master"
+      - name: ma-plugin
+        gitRepo:
+          repository: "https://github.com/dojot/ma-kong-plugin.git"
+          revision: "master"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: kong-route-config
+  namespace: dojot
+spec:
+  template:
+    metadata:
+      name: kong-route-config
+    spec:
+      containers:
+      - name: kong-route-config
+        image: byrnedo/alpine-curl
+        volumeMounts:
+        - mountPath: /config_file
+          name: kong-route-config
+        command: ['/bin/sh', '/config_file/kong.config.sh']
+      restartPolicy: OnFailure
+      volumes:
+      - name: kong-route-config
+        configMap:
+          name: kong-route-config

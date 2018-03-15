@@ -1,5 +1,5 @@
 ---
-version: 0.2.0-nightly20180306
+version: 0.2.0-nightly20180315
 namespace: dojot
 storage:
   type: ceph

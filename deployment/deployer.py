@@ -284,6 +284,111 @@ class KubeDeployer:
                 else:
                     logger.error("Invalid document on Kafka manifest: %s" % kafka_doc['kind'])
 
+    def deploy_device_manager(self, namespace):
+
+        with open('manifests/device_manager.yaml', 'r') as devm_docs:
+
+            for devm_doc in yaml.load_all(devm_docs):
+                if devm_doc['kind'] == 'Service':
+                    self.kube_client.create_service(devm_doc['metadata']['name'], namespace,
+                                                    devm_doc['spec'])
+                elif devm_doc['kind'] == 'Deployment':
+
+                    image = devm_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                        'latest', self.config.get_config_data('version'))
+
+                    devm_doc['spec']['template']['spec']['containers'][0]['image'] = image
+
+                    self.kube_client.create_deployment(devm_doc['metadata']['name'], namespace,
+                                                       devm_doc['spec'])
+                else:
+                    logger.error("Invalid document on Dev Manager manifest: %s" % devm_doc['kind'])
+
+    def deploy_data_broker(self, namespace):
+
+        with open('manifests/data_broker.yaml', 'r') as data_broker_docs:
+
+            for db_doc in yaml.load_all(data_broker_docs):
+                if db_doc['kind'] == 'Service':
+                    self.kube_client.create_service(db_doc['metadata']['name'], namespace,
+                                                    db_doc['spec'])
+                elif db_doc['kind'] == 'Deployment':
+
+                    if db_doc['metadata']['name'] == "data-broker":
+                        img = db_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                            'latest', self.config.get_config_data('version'))
+
+                        db_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(db_doc['metadata']['name'], namespace,
+                                                       db_doc['spec'])
+                else:
+                    logger.error("Invalid document on Data Broker manifest: %s" % db_doc['kind'])
+
+    def deploy_gui(self, namespace):
+
+        with open('manifests/gui.yaml', 'r') as gui_docs:
+
+            for gui_doc in yaml.load_all(gui_docs):
+                if gui_doc['kind'] == 'Service':
+                    self.kube_client.create_service(gui_doc['metadata']['name'], namespace,
+                                                    gui_doc['spec'])
+                elif gui_doc['kind'] == 'Deployment':
+
+                    img = gui_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                        'latest', self.config.get_config_data('version'))
+
+                    gui_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(gui_doc['metadata']['name'], namespace,
+                                                       gui_doc['spec'])
+                else:
+                    logger.error("Invalid document on GUI manifest: %s" % gui_doc['kind'])
+
+    def deploy_apigw(self, namespace):
+
+        with open('config_scripts/kong.config.sh', 'r') as config_file:
+
+            config_data = {
+                "kong.config.sh": config_file.read()
+            }
+
+            self.kube_client.create_config_map('kong-route-config', namespace, config_data)
+
+        with open('manifests/apigw.yaml', 'r') as apigw_docs:
+
+            for apigw_doc in yaml.load_all(apigw_docs):
+
+                if apigw_doc['kind'] == 'Service':
+                    self.kube_client.create_service(apigw_doc['metadata']['name'], namespace,
+                                                    apigw_doc['spec'])
+                elif apigw_doc['kind'] == 'Deployment':
+
+                    img = apigw_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                        'latest', self.config.get_config_data('version'))
+
+                    apigw_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(apigw_doc['metadata']['name'], namespace,
+                                                       apigw_doc['spec'])
+
+                elif apigw_doc['kind'] == 'Job':
+
+                    if apigw_doc['metadata']['name'] == "kong-migrate":
+                        img = \
+                            apigw_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                                'latest', self.config.get_config_data('version'))
+
+                        apigw_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.start_job(apigw_doc['metadata']['name'], namespace,
+                                               apigw_doc['spec'])
+                else:
+                    logger.error("Invalid document on API GW manifest: %s" % apigw_doc['kind'])
+
+    def deploy_auth(self, namespace, config):
+        pass
+
     def deploy_services(self, namespace):
 
         services_config = self.config.get_config_data('services')
@@ -292,6 +397,14 @@ class KubeDeployer:
         self.deploy_postgres(namespace, services_config['postgres'])
         self.deploy_mongodb(namespace, services_config['mongodb'])
         self.deploy_kafka(namespace, services_config['kafka'])
+
+        self.deploy_apigw(namespace)
+        self.deploy_auth(namespace, services_config['auth'])
+
+        self.deploy_device_manager(namespace)
+        self.deploy_data_broker(namespace)
+
+        self.deploy_gui(namespace)
 
     def deploy(self):
         logger.info("Starting deployment")
