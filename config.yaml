@@ -29,3 +29,5 @@ services:
     clusterSize: 3
   mongodb:
     replicas: 2
+  kafka:
+    clusterSize: 3

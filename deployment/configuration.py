@@ -159,6 +159,16 @@ class ConfigData:
 
         services_data['mongodb'] = {'replicas': mongodb_replicas}
 
+        kafka_data = services_data.get('kafka', {})
+
+        kafka_size = kafka_data.get('clusterSize', 0)
+
+        if kafka_size < 1:
+            logger.error("Invalid Kafka cluster size %d" % kafka_size)
+            exit(1)
+
+        services_data['kafka'] = {'clusterSize': kafka_size}
+
     def get_config_data(self, param=None):
 
         if param:

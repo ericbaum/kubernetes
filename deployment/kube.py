@@ -93,7 +93,7 @@ class KubeClient:
                 self.extensionsV1Beta1.replace_namespaced_deployment(name, namespace, body)
         except ApiException as error:
             if error.status == 404:
-                logger.info("Creating deployment '%s' at namespace '%s'")
+                logger.info("Creating deployment '%s' at namespace '%s'" % (name, namespace))
                 self.extensionsV1Beta1.create_namespaced_deployment(namespace, body)
             else:
                 logger.error(error)

@@ -262,6 +262,28 @@ class KubeDeployer:
                 else:
                     logger.error("Invalid document on MongoDB manifest: %s" % mongodb_doc['kind'])
 
+    def deploy_kafka(self, namespace, config):
+
+        kafka_replicas = config['clusterSize']
+
+        with open('manifests/kafka.yaml', 'r') as kafka_docs:
+
+            for kafka_doc in yaml.load_all(kafka_docs):
+
+                if kafka_doc['kind'] == 'Service':
+                    self.kube_client.create_service(kafka_doc['metadata']['name'], namespace,
+                                                    kafka_doc['spec'])
+                elif kafka_doc['kind'] == 'StatefulSet':
+
+                    kafka_spec = kafka_doc['spec']
+
+                    kafka_spec['replicas'] = kafka_replicas
+
+                    self.kube_client.create_stateful_set(kafka_doc['metadata']['name'],
+                                                         namespace, kafka_spec)
+                else:
+                    logger.error("Invalid document on Kafka manifest: %s" % kafka_doc['kind'])
+
     def deploy_services(self, namespace):
 
         services_config = self.config.get_config_data('services')
@@ -269,6 +291,7 @@ class KubeDeployer:
         self.deploy_zookeeper(namespace, services_config['zookeeper'])
         self.deploy_postgres(namespace, services_config['postgres'])
         self.deploy_mongodb(namespace, services_config['mongodb'])
+        self.deploy_kafka(namespace, services_config['kafka'])
 
     def deploy(self):
         logger.info("Starting deployment")
