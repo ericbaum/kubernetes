@@ -62,4 +62,9 @@ spec:
       containers:
       - image: dojot/data-broker:latest
         name: data-broker
+        env:
+        - name: DATABROKER_KAFKA_HOST
+          value: kafka-server:9092
+        - name: DATABROKER_ZOOKEEPER_HOST
+          value: zk-client:2181
       restartPolicy: Always

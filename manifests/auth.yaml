@@ -30,6 +30,8 @@ spec:
       - image: dojot/auth:latest
         name: auth
         env:
+        - name: KAFKA_HOST
+          value: kafka-server:9092
         - name: AUTH_DB_HOST
           value: postgres
         - name: AUTH_DB_USER

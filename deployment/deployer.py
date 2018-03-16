@@ -387,7 +387,54 @@ class KubeDeployer:
                     logger.error("Invalid document on API GW manifest: %s" % apigw_doc['kind'])
 
     def deploy_auth(self, namespace, config):
-        pass
+
+        with open('manifests/auth.yaml', 'r') as auth_docs:
+
+            for auth_doc in yaml.load_all(auth_docs):
+                if auth_doc['kind'] == 'Service':
+                    self.kube_client.create_service(auth_doc['metadata']['name'], namespace,
+                                                    auth_doc['spec'])
+                elif auth_doc['kind'] == 'Deployment':
+
+                    img = auth_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                        'latest', self.config.get_config_data('version'))
+
+                    auth_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    # If email parameters are set, pass then to the deployment
+                    # TODO: Set email parameters as secrets
+                    if config.get('emailHost', None):
+
+                        env_vars = auth_doc['spec']['template']['spec']['containers'][0]['env']
+
+                        for env_var in env_vars:
+                            if env_var['name'] == 'AUTH_EMAIL_HOST':
+                                env_var['value'] = config.get('emailHost')
+                            elif env_var['name'] == 'AUTH_EMAIL_USER':
+                                env_var['value'] = config.get('emailUser')
+                            elif env_var['name'] == 'AUTH_EMAIL_PASSWD':
+                                env_var['value'] = config.get('emailPassword')
+
+                    self.kube_client.create_deployment(auth_doc['metadata']['name'], namespace,
+                                                       auth_doc['spec'])
+                else:
+                    logger.error("Invalid document on Auth manifest: %s" % auth_doc['kind'])
+
+    # TODO: Clusterize rabbitmq
+    # TODO: Add persistence to rabbit
+    def deploy_rabbitmq(self, namespace):
+        with open('manifests/rabbitmq.yaml', 'r') as rabbit_docs:
+
+            for rabbit_doc in yaml.load_all(rabbit_docs):
+                if rabbit_doc['kind'] == 'Service':
+                    self.kube_client.create_service(rabbit_doc['metadata']['name'], namespace,
+                                                    rabbit_doc['spec'])
+                elif rabbit_doc['kind'] == 'Deployment':
+
+                    self.kube_client.create_deployment(rabbit_doc['metadata']['name'], namespace,
+                                                       rabbit_doc['spec'])
+                else:
+                    logger.error("Invalid document on RabbitMQ manifest: %s" % rabbit_doc['kind'])
 
     def deploy_services(self, namespace):
 
@@ -397,6 +444,7 @@ class KubeDeployer:
         self.deploy_postgres(namespace, services_config['postgres'])
         self.deploy_mongodb(namespace, services_config['mongodb'])
         self.deploy_kafka(namespace, services_config['kafka'])
+        self.deploy_rabbitmq(namespace)
 
         self.deploy_apigw(namespace)
         self.deploy_auth(namespace, services_config['auth'])

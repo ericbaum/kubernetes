@@ -31,3 +31,7 @@ services:
     replicas: 2
   kafka:
     clusterSize: 3
+  auth:
+    emailHost: 'smtp.gmail.com'
+    emailUser: 'test@test.com'
+    emailPassword: 'password'

@@ -169,6 +169,20 @@ class ConfigData:
 
         services_data['kafka'] = {'clusterSize': kafka_size}
 
+        auth_data = services_data.get('auth', {})
+
+        auth_email_host = auth_data.get('emailHost', None)
+        auth_email_user = auth_data.get('emailUser', None)
+        auth_email_password = auth_data.get('emailPassword', None)
+
+        if not (auth_email_host and auth_email_user and auth_email_password):
+            if (auth_email_host or auth_email_user or auth_email_password):
+                logger.error("Missing Auth email parameter, fields required:"
+                             " emailHost, emailUser and emailPassword")
+            else:
+                logger.warning("Auth Email parameters are missing, "
+                               "the service will be run with a temporary password.")
+
     def get_config_data(self, param=None):
 
         if param:
