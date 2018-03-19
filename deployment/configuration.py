@@ -9,6 +9,7 @@ DEFAULT_EXTERNAL_PORTS = {
     'httpPort': 80,
     'httpsPort': 443,
     'mqttPort': 1883,
+    'mqttSecurePort': 8883,
     'coapPort': 5684
 }
 

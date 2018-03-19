@@ -22,6 +22,7 @@ externalAccess:
     httpPort: 80
     httpsPort: 443
     mqttPort: 1883
+    mqttSecurePort: 8883
 services:
   zookeeper:
     clusterSize: 3

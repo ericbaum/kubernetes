@@ -27,9 +27,12 @@ metadata:
   namespace: dojot
 spec:
   ports:
-  - name: "ext-mqtt"
+  - name: "ext-mqtt-insecure"
     port: 1883
     targetPort: 1883
+  - name: "ext-mqtt-secure"
+    port: 8883
+    targetPort: 8883
   externalIPs:
   - [EXTERNAL_IP]
   selector:

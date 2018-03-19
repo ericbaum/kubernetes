@@ -436,6 +436,28 @@ class KubeDeployer:
                 else:
                     logger.error("Invalid document on RabbitMQ manifest: %s" % rabbit_doc['kind'])
 
+    def deploy_mqtt_iotagent(self, namespace):
+        with open('manifests/iotagent-mqtt.yaml', 'r') as mqtt_docs:
+
+            for mqtt_doc in yaml.load_all(mqtt_docs):
+                if mqtt_doc['kind'] == 'Service':
+
+                    self.kube_client.create_service(mqtt_doc['metadata']['name'], namespace,
+                                                    mqtt_doc['spec'])
+                elif mqtt_doc['kind'] == 'Deployment':
+
+                    if mqtt_doc['metadata']['name'] == "iotagent-mqtt":
+                        img = \
+                            mqtt_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                                'latest', self.config.get_config_data('version'))
+
+                        mqtt_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(mqtt_doc['metadata']['name'], namespace,
+                                                       mqtt_doc['spec'])
+                else:
+                    logger.error("Invalid document on RabbitMQ manifest: %s" % mqtt_doc['kind'])
+
     def deploy_services(self, namespace):
 
         services_config = self.config.get_config_data('services')
@@ -451,6 +473,8 @@ class KubeDeployer:
 
         self.deploy_device_manager(namespace)
         self.deploy_data_broker(namespace)
+
+        self.deploy_mqtt_iotagent(namespace)
 
         self.deploy_gui(namespace)
 
