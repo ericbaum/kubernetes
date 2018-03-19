@@ -456,7 +456,52 @@ class KubeDeployer:
                     self.kube_client.create_deployment(mqtt_doc['metadata']['name'], namespace,
                                                        mqtt_doc['spec'])
                 else:
-                    logger.error("Invalid document on RabbitMQ manifest: %s" % mqtt_doc['kind'])
+                    logger.error("Invalid document on MQTT IoT Agent manifest: %s" %
+                                 mqtt_doc['kind'])
+
+    def deploy_flowbroker(self, namespace):
+        with open('manifests/flowbroker.yaml', 'r') as flowbroker_docs:
+
+            for flowbroker_doc in yaml.load_all(flowbroker_docs):
+                if flowbroker_doc['kind'] == 'Service':
+
+                    self.kube_client.create_service(flowbroker_doc['metadata']['name'], namespace,
+                                                    flowbroker_doc['spec'])
+                elif flowbroker_doc['kind'] == 'Deployment':
+
+                    img = \
+                      flowbroker_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                            'latest', self.config.get_config_data('version'))
+
+                    flowbroker_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(flowbroker_doc['metadata']['name'],
+                                                       namespace, flowbroker_doc['spec'])
+                else:
+                    logger.error("Invalid document on Flowbroker manifest: %s" %
+                                 flowbroker_doc['kind'])
+
+    def deploy_history(self, namespace):
+        with open('manifests/history.yaml', 'r') as history_docs:
+
+            for history_doc in yaml.load_all(history_docs):
+                if history_doc['kind'] == 'Service':
+
+                    self.kube_client.create_service(history_doc['metadata']['name'], namespace,
+                                                    history_doc['spec'])
+                elif history_doc['kind'] == 'Deployment':
+
+                    img = \
+                      history_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                            'latest', self.config.get_config_data('version'))
+
+                    history_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(history_doc['metadata']['name'],
+                                                       namespace, history_doc['spec'])
+                else:
+                    logger.error("Invalid document on History manifest: %s" %
+                                 history_doc['kind'])
 
     def deploy_services(self, namespace):
 
@@ -473,8 +518,11 @@ class KubeDeployer:
 
         self.deploy_device_manager(namespace)
         self.deploy_data_broker(namespace)
+        self.deploy_history(namespace)
 
+        # TODO: Flowbroker mongo replicas need fix
         self.deploy_mqtt_iotagent(namespace)
+        # self.deploy_flowbroker(namespace)
 
         self.deploy_gui(namespace)
 
