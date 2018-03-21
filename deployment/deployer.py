@@ -520,9 +520,8 @@ class KubeDeployer:
         self.deploy_data_broker(namespace)
         self.deploy_history(namespace)
 
-        # TODO: Flowbroker mongo replicas need fix
         self.deploy_mqtt_iotagent(namespace)
-        # self.deploy_flowbroker(namespace)
+        self.deploy_flowbroker(namespace)
 
         self.deploy_gui(namespace)
 
