@@ -324,3 +324,28 @@ class KubeClient:
             else:
                 logger.error(error)
                 exit(1)
+
+    # TODO: View how to deal with existing pvcs as they are not replaceable
+    def create_pvc(self, name, namespace, spec):
+
+        body = {
+            'metadata': {
+                'name': name
+            },
+            'spec': spec
+        }
+
+        try:
+            res = self.v1.read_namespaced_persistent_volume_claim(name, namespace)
+            if res.metadata.name == name:
+                logger.info("Updating existing pvc with "
+                            "name '%s' on namespace '%s'" % (name, namespace))
+                # self.v1.replace_namespaced_persistent_volume_claim(name, namespace, body)
+        except ApiException as error:
+            if error.status == 404:
+                logger.info("Creating pvc '%s' on namespace '%s'" % (name, namespace))
+                self.v1.create_namespaced_persistent_volume_claim(namespace, body)
+            else:
+                logger.error(error)
+                exit(1)
+

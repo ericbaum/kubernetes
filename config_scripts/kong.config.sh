@@ -48,8 +48,8 @@ PAYLOAD
     "upstream_url": "http://data-broker:80"
 }
 PAYLOAD
-
 authConfig "data-broker"
+
 (curl -o /dev/null ${kong}/apis -sS -X POST \
     --header "Content-Type: application/json" \
     -d @- ) <<PAYLOAD
@@ -61,6 +61,7 @@ authConfig "data-broker"
 }
 PAYLOAD
 authConfig "data-streams"
+
 (curl -o /dev/null $kong/apis -s -S -X POST \
     --header "Content-Type: application/json" \
     -d @- ) <<PAYLOAD
@@ -71,6 +72,7 @@ authConfig "data-streams"
     "upstream_url": "http://data-broker:80"
 }
 PAYLOAD
+auth-config "ws-http"
 
 (curl -o /dev/null ${kong}/apis -s -S -X POST \
     --header "Content-Type: application/json" \
@@ -189,6 +191,7 @@ authConfig "flows"
     "upstream_url": "http://flowbroker:80"
 }
 PAYLOAD
+authConfig "mashup"
 
 # Alarm manager endpoints
 (curl -o /dev/null ${kong}/apis -sS -X POST \

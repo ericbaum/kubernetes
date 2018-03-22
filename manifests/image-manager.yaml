@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: image-manager
+  name: image-manager
+  namespace: dojot
+spec:
+  ports:
+  - port: 5000
+    targetPort: 5000
+  selector:
+    name: image-manager
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    name: image-manager
+  name: image-manager
+  namespace: dojot
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: image-manager
+    spec:
+      containers:
+      - image: dojot/image-manager:latest
+        name: image-manager
+        env:
+        # TODO: set all of this as secrets
+        - name: S3ACCESSKEY
+          value: "minio"
+        - name: S3SECRETKEY
+          value: "minio123"
+        - name: DBUSER
+          value: postgres
+        - name: DBPASS
+          value: kong
+      restartPolicy: Always
