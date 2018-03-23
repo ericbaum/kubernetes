@@ -191,7 +191,6 @@ authConfig "flows"
     "upstream_url": "http://flowbroker:80"
 }
 PAYLOAD
-authConfig "mashup"
 
 # Alarm manager endpoints
 (curl -o /dev/null ${kong}/apis -sS -X POST \

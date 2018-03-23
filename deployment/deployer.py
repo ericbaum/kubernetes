@@ -503,6 +503,7 @@ class KubeDeployer:
                     logger.error("Invalid document on History manifest: %s" %
                                  history_doc['kind'])
 
+    # TODO: Minio configuration for Google Cloud
     # TODO: ACCESS keys as secrets
     def deploy_minio(self, namespace):
         with open('manifests/minio.yaml', 'r') as minio_docs:
@@ -553,6 +554,36 @@ class KubeDeployer:
                     logger.error("Invalid document on Image Manager manifest: %s" %
                                  image_doc['kind'])
 
+    def deploy_ejbca(self, namespace):
+
+        with open('manifests/ejbca.yaml', 'r') as ejbca_docs:
+
+            for ejbca_doc in yaml.load_all(ejbca_docs):
+                if ejbca_doc['kind'] == 'Service':
+                    self.kube_client.create_service(ejbca_doc['metadata']['name'],
+                                                    namespace,
+                                                    ejbca_doc['spec'])
+
+                elif ejbca_doc['kind'] == 'Deployment':
+
+                    img = \
+                        ejbca_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                            'latest', self.config.get_config_data('version'))
+
+                    ejbca_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(ejbca_doc['metadata']['name'],
+                                                       namespace, ejbca_doc['spec'])
+
+                elif ejbca_doc['kind'] == 'PersistentVolumeClaim':
+
+                    self.kube_client.create_pvc(ejbca_doc['metadata']['name'],
+                                                namespace, ejbca_doc['spec'])
+
+                else:
+                    logger.error("Invalid document on EJBCA manifest: %s" %
+                                 ejbca_doc['kind'])
+
     def deploy_services(self, namespace):
 
         services_config = self.config.get_config_data('services')
@@ -566,6 +597,7 @@ class KubeDeployer:
 
         self.deploy_apigw(namespace)
         self.deploy_auth(namespace, services_config['auth'])
+        self.deploy_ejbca(namespace)
 
         self.deploy_device_manager(namespace)
         self.deploy_data_broker(namespace)

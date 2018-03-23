@@ -348,4 +348,3 @@ class KubeClient:
             else:
                 logger.error(error)
                 exit(1)
-
