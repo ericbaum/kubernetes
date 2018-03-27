@@ -1,3 +1,48 @@
+kind: ServiceAccount
+apiVersion: v1
+metadata:
+  name: mongodb
+  namespace: dojot
+---
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: mongo-role
+  namespace: dojot
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: mongo-role-binding
+  namespace: dojot
+subjects:
+- kind: ServiceAccount
+  name: mongodb
+  namespace: dojot
+roleRef:
+  kind: Role
+  name: mongo-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: mongodb
+  name: mongodb
+  namespace: dojot
+spec:
+  clusterIP: None
+  ports:
+  - port: 27017
+    targetPort: 27017
+  selector:
+    name: mongodb
+---
 apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
@@ -37,10 +82,11 @@ spec:
   volumeClaimTemplates:
   - metadata:
       name: mongo-volume
-      namespace: dojot
     spec:
       accessModes: [ "ReadWriteOnce" ]
       storageClassName: dojot
       resources:
         requests:
           storage: 1Gi
+
+

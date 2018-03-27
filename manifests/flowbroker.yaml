@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: flowbroker
+  name: flowbroker
+  namespace: dojot
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    name: flowbroker
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    name: flowbroker
+  name: flowbroker
+  namespace: dojot
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: flowbroker
+    spec:
+      containers:
+      - image: dojot/flowbroker:latest
+        name: flowbroker
+        env:
+        - name: REPLICA_SET
+          value: rs0
+        - name: KAFKA_HOST
+          value: kafka-server:9092
+      restartPolicy: Always

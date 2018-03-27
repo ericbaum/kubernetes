@@ -1,11 +1,32 @@
-apiVersion: extensions/v1beta1
-kind: Deployment
+apiVersion: v1
+kind: Service
 metadata:
   labels:
     name: kafka-server
   name: kafka-server
   namespace: dojot
 spec:
+  ports:
+  - name: "kafka-server"
+    port: 9092
+    targetPort: 9092
+  selector:
+    name: kafka-server
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  labels:
+    name: kafka-server
+  name: kafka-server
+  namespace: dojot
+spec:
+  serviceName: kafka-server
+  updateStrategy:
+    type: RollingUpdate
+  securityContext:
+    privileged: true
+  podManagementPolicy: Parallel
   replicas: 1
   template:
     metadata:
@@ -13,14 +34,25 @@ spec:
         name: kafka-server
     spec:
       containers:
-      - image: ches/kafka:0.10.1.1
+      - image: ericbaum/kafka:0.10.2.1
         name: kafka-server
         ports:
         - containerPort: 9092
         env:
         - name: ZOOKEEPER_IP
           value: "zk-client"
-        # TODO: Take a better look at this configuration
         - name: KAFKA_NUM_PARTITIONS
-          value: "10"
+          value: "1"
+        volumeMounts:
+         - name: kafka-volume
+           mountPath: /data
       restartPolicy: Always
+  volumeClaimTemplates:
+  - metadata:
+      name: kafka-volume
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: dojot
+      resources:
+        requests:
+          storage: 1Gi

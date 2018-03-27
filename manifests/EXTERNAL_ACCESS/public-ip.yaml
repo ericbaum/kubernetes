@@ -7,10 +7,10 @@ metadata:
   namespace: dojot
 spec:
   ports:
-  - name: "ext-8000"
+  - name: "ext-http"
     port: 80
     targetPort: 8000
-  - name: "ext-8443"
+  - name: "ext-https"
     port: 443
     targetPort: 8443
   externalIPs:
@@ -27,9 +27,12 @@ metadata:
   namespace: dojot
 spec:
   ports:
-  - name: "ext-mqtt"
+  - name: "ext-mqtt-insecure"
     port: 1883
     targetPort: 1883
+  - name: "ext-mqtt-secure"
+    port: 8883
+    targetPort: 8883
   externalIPs:
   - [EXTERNAL_IP]
   selector:
