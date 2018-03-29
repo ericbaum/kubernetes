@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: alarm-manager
+  name: alarm-manager
+  namespace: dojot
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    name: alarm-manager
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    name: alarm-mamanger
+  name: alarm-manager
+  namespace: dojot
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: alarm-manager
+    spec:
+      containers:
+      - image: dojot/alarm-manager:latest
+        name: alarm-manager
+        env:
+        - name: MONGO_HOST
+          value: 127.0.0.1
+        - name: RABBIT_HOST
+          value: rabbitmq
+        volumeMounts:
+        - mountPath: /opt/jboss/dojot/alarms
+          name: alarm-metamodels
+      - image: mongo:3.2
+        name: alarm-mongodb
+        volumeMounts:
+          - mountPath: "/data/db"
+            name: alarm-mongodb-volume
+      restartPolicy: Always
+      volumes:
+      - name: alarm-metamodels
+        gitRepo:
+          repository: "https://github.com/dojot/alarm-metamodels.git"
+          revision: "master"
+          directory: metamodel
+      - name: alarm-mongodb-volume
+        persistentVolumeClaim:
+          claimName: alarm-mongodb-volume
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: alarm-mongodb-volume
+spec:
+  storageClassName: dojot
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
