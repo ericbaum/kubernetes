@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: minio
+  name: minio
+spec:
+  ports:
+    - port: 9000
+      targetPort: 9000
+      protocol: TCP
+  selector:
+    name: minio
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+spec:
+  storageClassName: dojot
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: minio
+spec:
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        name: minio
+    spec:
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: minio-pvc
+      containers:
+      - name: minio
+        volumeMounts:
+        - name: data
+          mountPath: "/data"
+        image: minio/minio:RELEASE.2018-03-19T19-22-06Z
+        args:
+        - server
+        - /data
+        env:
+        # TODO: Use secrets
+        - name: MINIO_ACCESS_KEY
+          value: "minio"
+        - name: MINIO_SECRET_KEY
+          value: "minio123"
+        ports:
+        - containerPort: 9000
+        readinessProbe:
+          httpGet:
+            path: /minio/health/ready
+            port: 9000
+          initialDelaySeconds: 120
+          periodSeconds: 20
+        livenessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          initialDelaySeconds: 120
+          periodSeconds: 20
