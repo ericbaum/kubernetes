@@ -503,6 +503,87 @@ class KubeDeployer:
                     logger.error("Invalid document on History manifest: %s" %
                                  history_doc['kind'])
 
+    # TODO: Minio configuration for Google Cloud
+    # TODO: ACCESS keys as secrets
+    def deploy_minio(self, namespace):
+        with open('manifests/minio.yaml', 'r') as minio_docs:
+
+            for minio_doc in yaml.load_all(minio_docs):
+                if minio_doc['kind'] == 'Service':
+                    self.kube_client.create_service(minio_doc['metadata']['name'],
+                                                    namespace,
+                                                    minio_doc['spec'])
+
+                elif minio_doc['kind'] == 'Deployment':
+
+                    self.kube_client.create_deployment(minio_doc['metadata']['name'],
+                                                       namespace, minio_doc['spec'])
+
+                elif minio_doc['kind'] == 'PersistentVolumeClaim':
+
+                    self.kube_client.create_pvc(minio_doc['metadata']['name'],
+                                                namespace, minio_doc['spec'])
+
+                else:
+                    logger.error("Invalid document on Minio manifest: %s" %
+                                 minio_doc['kind'])
+
+    # TODO: Access keys as secrets
+    def deploy_image_manager(self, namespace):
+
+        with open('manifests/image-manager.yaml', 'r') as image_manager_docs:
+
+            for image_doc in yaml.load_all(image_manager_docs):
+                if image_doc['kind'] == 'Service':
+                    self.kube_client.create_service(image_doc['metadata']['name'],
+                                                    namespace,
+                                                    image_doc['spec'])
+
+                elif image_doc['kind'] == 'Deployment':
+
+                    img = \
+                        image_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                            'latest', self.config.get_config_data('version'))
+
+                    image_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(image_doc['metadata']['name'],
+                                                       namespace, image_doc['spec'])
+
+                else:
+                    logger.error("Invalid document on Image Manager manifest: %s" %
+                                 image_doc['kind'])
+
+    def deploy_ejbca(self, namespace):
+
+        with open('manifests/ejbca.yaml', 'r') as ejbca_docs:
+
+            for ejbca_doc in yaml.load_all(ejbca_docs):
+                if ejbca_doc['kind'] == 'Service':
+                    self.kube_client.create_service(ejbca_doc['metadata']['name'],
+                                                    namespace,
+                                                    ejbca_doc['spec'])
+
+                elif ejbca_doc['kind'] == 'Deployment':
+
+                    img = \
+                        ejbca_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                            'latest', self.config.get_config_data('version'))
+
+                    ejbca_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(ejbca_doc['metadata']['name'],
+                                                       namespace, ejbca_doc['spec'])
+
+                elif ejbca_doc['kind'] == 'PersistentVolumeClaim':
+
+                    self.kube_client.create_pvc(ejbca_doc['metadata']['name'],
+                                                namespace, ejbca_doc['spec'])
+
+                else:
+                    logger.error("Invalid document on EJBCA manifest: %s" %
+                                 ejbca_doc['kind'])
+                    
     def deploy_alarm_manager(self, namespace):
 
         # TODO: Mount the alarm metamodel files
@@ -543,14 +624,18 @@ class KubeDeployer:
         self.deploy_mongodb(namespace, services_config['mongodb'])
         self.deploy_kafka(namespace, services_config['kafka'])
         self.deploy_rabbitmq(namespace)
+        self.deploy_minio(namespace)
 
         self.deploy_apigw(namespace)
         self.deploy_auth(namespace, services_config['auth'])
+        self.deploy_ejbca(namespace)
 
         self.deploy_device_manager(namespace)
         self.deploy_data_broker(namespace)
         self.deploy_history(namespace)
         self.deploy_alarm_manager(namespace)
+
+        self.deploy_image_manager(namespace)
 
         self.deploy_mqtt_iotagent(namespace)
         self.deploy_flowbroker(namespace)

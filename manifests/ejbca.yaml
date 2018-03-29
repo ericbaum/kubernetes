@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: ejbca
+  name: ejbca
+  namespace: dojot
+spec:
+  ports:
+  - port: 5583
+    targetPort: 5583
+  selector:
+    name: ejbca
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    name: ejbca
+  name: ejbca
+  namespace: dojot
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: ejbca
+    spec:
+      containers:
+      - image: dojot/ejbca:latest
+        name: ejbca
+        env:
+        - name: EJBCA_KAFKA_HOST
+          value: kafka-server:9092
+        volumeMounts:
+        - name: ejbca-volume
+          mountPath: /data
+      restartPolicy: Always
+      volumes:
+      - name: ejbca-volume
+        persistentVolumeClaim:
+          claimName: ejbca-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ejbca-pvc
+spec:
+  storageClassName: dojot
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
