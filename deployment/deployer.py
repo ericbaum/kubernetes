@@ -503,6 +503,37 @@ class KubeDeployer:
                     logger.error("Invalid document on History manifest: %s" %
                                  history_doc['kind'])
 
+    def deploy_alarm_manager(self, namespace):
+
+        # TODO: Mount the alarm metamodel files
+        with open('manifests/alarm-manager.yaml', 'r') as alarm_manager_docs:
+
+            for alarm_doc in yaml.load_all(alarm_manager_docs):
+                if alarm_doc['kind'] == 'Service':
+                    self.kube_client.create_service(alarm_doc['metadata']['name'],
+                                                    namespace,
+                                                    alarm_doc['spec'])
+
+                elif alarm_doc['kind'] == 'Deployment':
+
+                    img = \
+                        alarm_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                            'latest', self.config.get_config_data('version'))
+
+                    alarm_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(alarm_doc['metadata']['name'],
+                                                       namespace, alarm_doc['spec'])
+
+                elif alarm_doc['kind'] == 'PersistentVolumeClaim':
+
+                    self.kube_client.create_pvc(alarm_doc['metadata']['name'],
+                                                namespace, alarm_doc['spec'])
+
+                else:
+                    logger.error("Invalid document on Alarm Manager manifest: %s" %
+                                 alarm_doc['kind'])
+
     def deploy_services(self, namespace):
 
         services_config = self.config.get_config_data('services')
@@ -519,6 +550,7 @@ class KubeDeployer:
         self.deploy_device_manager(namespace)
         self.deploy_data_broker(namespace)
         self.deploy_history(namespace)
+        self.deploy_alarm_manager(namespace)
 
         self.deploy_mqtt_iotagent(namespace)
         self.deploy_flowbroker(namespace)
