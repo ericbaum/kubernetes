@@ -503,6 +503,48 @@ class KubeDeployer:
                     logger.error("Invalid document on History manifest: %s" %
                                  history_doc['kind'])
 
+    def deploy_mutual_auth(self, namespace):
+
+        with open('ma_config_files/redis_init.sh', 'r') as redis_init_file:
+            redis_init = redis_init_file.read()
+
+        with open('ma_config_files/redis.conf', 'r') as redis_conf_file:
+            redis_conf = redis_conf_file.read()
+
+        with open('ma_config_files/sentinel.conf', 'r') as sentinel_conf_file:
+            sentinel_conf = sentinel_conf_file.read()
+
+        config_data = {
+            "sentinel.conf": sentinel_conf,
+            "redis.conf": redis_conf,
+            "redis_init.sh": redis_init
+        }
+
+        self.kube_client.create_config_map('ma-redis-config', namespace, config_data)
+
+        with open('manifests/mutual-authentication.yaml', 'r') as ma_docs:
+
+            for ma_doc in yaml.load_all(ma_docs):
+                if ma_doc['kind'] == 'Service':
+
+                    self.kube_client.create_service(ma_doc['metadata']['name'], namespace,
+                                                    ma_doc['spec'])
+                elif ma_doc['kind'] == 'Deployment':
+
+                    if ma_doc['metadata']['name'] == "kerberos":
+
+                        img = \
+                            ma_doc['spec']['template']['spec']['containers'][0]['image'].replace(
+                                'latest', self.config.get_config_data('version'))
+
+                        ma_doc['spec']['template']['spec']['containers'][0]['image'] = img
+
+                    self.kube_client.create_deployment(ma_doc['metadata']['name'], namespace,
+                                                       ma_doc['spec'])
+                else:
+                    logger.error("Invalid document on Mutual Authetication manifest: %s" %
+                                 ma_doc['kind'])
+
     # TODO: Minio configuration for Google Cloud
     # TODO: ACCESS keys as secrets
     def deploy_minio(self, namespace):
@@ -628,6 +670,7 @@ class KubeDeployer:
 
         self.deploy_apigw(namespace)
         self.deploy_auth(namespace, services_config['auth'])
+        self.deploy_mutual_auth(namespace)
         self.deploy_ejbca(namespace)
 
         self.deploy_device_manager(namespace)

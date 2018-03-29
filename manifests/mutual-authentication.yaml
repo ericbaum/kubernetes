@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: kerberos
+  name: kerberos
+  namespace: dojot
+spec:
+  ports:
+  - port: 8080
+    targetPort: 8080
+  selector:
+    name: kerberos
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    name: kerberos
+  name: kerberos
+  namespace: dojot
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: kerberos
+    spec:
+      containers:
+      # TODO: Change the image to the dojot version
+      - image: dojot/kerberos:latest
+        name: kerberos
+        env:
+        - name: KAFKA_ADDRESS
+          value: kafka-server
+        - name: REDIS_ADDRESS
+          value: ma-redis
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: ma-redis
+  name: ma-redis
+  namespace: dojot
+spec:
+  ports:
+  - name: ma-redis-port
+    port: 6379
+    targetPort: 6379
+  - name: ma-redis-sentinel-port
+    port: 16379
+    targetPort: 16379
+  selector:
+    name: ma-redis
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    name: ma-redis
+  name: ma-redis
+  namespace: dojot
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: ma-redis
+    spec:
+      containers:
+      - name: ma-redis
+        image: redis:3.2.8
+        command: [ "sh", "/usr/local/etc/redis/redis_init.sh" ]
+        volumeMounts:
+        - mountPath: /usr/local/etc/redis/
+          name: ma-redis-config
+        ports:
+        - containerPort: 6379
+        - containerPort: 16379
+      restartPolicy: Always
+      volumes:
+      - name: ma-redis-config
+        configMap:
+          name: ma-redis-config
